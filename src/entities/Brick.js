@@ -6,6 +6,12 @@ export default class Brick {
     this.height = height;
     this.color = color;
     this.active = true;
+
+    // Cache colors for performance
+    this._cachedLighten45 = this._lighten(color, 0.45);
+    this._cachedDarken45 = this._darken(color, 0.45);
+    this._cachedLighten15 = this._lighten(color, 0.15);
+    this._cachedDarken10 = this._darken(color, 0.1);
   }
 
   draw(ctx) {
@@ -22,7 +28,7 @@ export default class Brick {
     ctx.fillRect(x, y, w, h);
 
     // Top and Left highlight (lighter bevel)
-    ctx.fillStyle = this._lighten(this.color, 0.45);
+    ctx.fillStyle = this._cachedLighten45;
     ctx.beginPath();
     ctx.moveTo(x, y + h);
     ctx.lineTo(x, y);
@@ -33,7 +39,7 @@ export default class Brick {
     ctx.fill();
 
     // Bottom and Right shadow (darker bevel)
-    ctx.fillStyle = this._darken(this.color, 0.45);
+    ctx.fillStyle = this._cachedDarken45;
     ctx.beginPath();
     ctx.moveTo(x + w, y);
     ctx.lineTo(x + w, y + h);
@@ -45,8 +51,8 @@ export default class Brick {
 
     // Inner face — slightly different shade for depth
     const innerGrad = ctx.createLinearGradient(x, y, x, y + h);
-    innerGrad.addColorStop(0, this._lighten(this.color, 0.15));
-    innerGrad.addColorStop(1, this._darken(this.color, 0.1));
+    innerGrad.addColorStop(0, this._cachedLighten15);
+    innerGrad.addColorStop(1, this._cachedDarken10);
     ctx.fillStyle = innerGrad;
     ctx.fillRect(x + bevel, y + bevel, w - bevel * 2, h - bevel * 2);
 
