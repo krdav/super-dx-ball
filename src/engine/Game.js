@@ -1,5 +1,5 @@
 import InputHandler from './InputHandler.js';
-import Paddle from '../entities/Paddle.js';
+import Paddle, { drawPaddleShape } from '../entities/Paddle.js';
 import Ball from '../entities/Ball.js';
 import Bullet from '../entities/Bullet.js';
 import LevelManager from './LevelManager.js';
@@ -472,6 +472,12 @@ export default class Game {
           this.powerUps.push(new PowerUp(brick.x + brick.width / 2 - 15, brick.y, randomType));
         }
 
+        // If Fireball, destroy surrounding bricks
+        if (ball.isFireball) {
+          // explosion radius for fireball
+          this._explodeBrick(brick, 0.5);
+        }
+
         // Thru brick — no bounce, just destroy
         if (ball.isThruBrick) {
           continue; // Don't bounce, keep checking more bricks
@@ -482,24 +488,21 @@ export default class Game {
           continue;
         }
 
-        if (!ball.isFireball) {
-          let overlapLeft = (ball.x + ball.radius) - brick.x;
-          let overlapRight = (brick.x + brick.width) - (ball.x - ball.radius);
-          let overlapTop = (ball.y + ball.radius) - brick.y;
-          let overlapBottom = (brick.y + brick.height) - (ball.y - ball.radius);
+        let overlapLeft = (ball.x + ball.radius) - brick.x;
+        let overlapRight = (brick.x + brick.width) - (ball.x - ball.radius);
+        let overlapTop = (ball.y + ball.radius) - brick.y;
+        let overlapBottom = (brick.y + brick.height) - (ball.y - ball.radius);
 
-          let minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+        let minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
 
-          if (minOverlap === overlapLeft || minOverlap === overlapRight) {
-            ball.vx *= -1;
-          } else {
-            ball.vy *= -1;
-          }
-          
-          // Only hit one brick per frame to prevent weird physics
-          break;
+        if (minOverlap === overlapLeft || minOverlap === overlapRight) {
+          ball.vx *= -1;
+        } else {
+          ball.vy *= -1;
         }
-        // Fireball: destroy without bouncing but only one per frame in terms of bounce
+
+        // Only hit one brick per frame to prevent weird physics
+        break;
       }
     }
   }
@@ -509,11 +512,15 @@ export default class Game {
     this.ctx.fillStyle = '#000000';
     this.ctx.fillRect(0, 0, this.width, this.height);
 
+    // Check if any ball is currently grabbed to inform paddle drawing
+    const isAnyBallGrabbed = this.balls.some(b => b.isGrabbed);
+
     // Draw bricks, powerups, bullets, paddle, balls
     this.levelManager.draw(this.ctx);
     this.powerUps.forEach(p => p.draw(this.ctx));
     this.bullets.forEach(b => b.draw(this.ctx));
-    this.paddle.draw(this.ctx);
+    // Pass isAnyBallGrabbed to the paddle draw call to handle the grab arch
+    this.paddle.draw(this.ctx, isAnyBallGrabbed);
     this.balls.forEach(b => b.draw(this.ctx));
 
     // Draw pillar walls ON TOP of everything
@@ -579,23 +586,15 @@ export default class Game {
     ctx.textBaseline = 'top';
     ctx.fillText(this.score.toString(), PLAYFIELD_LEFT + 10, 6);
 
-    // === Lives — small golden ball icons, top-right ===
-    const lifeRadius = 5;
-    const lifeSpacing = 14;
+    // === Lives — mini paddles, top-right ===
+    const paddleWidth = 30; // Mini paddle width
+    const paddleHeight = 8; // Mini paddle height
+    const lifeSpacing = paddleWidth + 10;
     const livesStartX = PLAYFIELD_RIGHT - 10 - (this.lives * lifeSpacing);
     for (let i = 0; i < this.lives; i++) {
-      const lx = livesStartX + i * lifeSpacing + lifeRadius;
-      const ly = 14;
-      
-      const lifeGrad = ctx.createRadialGradient(lx - 1, ly - 1, 1, lx, ly, lifeRadius);
-      lifeGrad.addColorStop(0, '#FFFDE0');
-      lifeGrad.addColorStop(0.5, '#E8D44D');
-      lifeGrad.addColorStop(1, '#8A7A20');
-      
-      ctx.beginPath();
-      ctx.arc(lx, ly, lifeRadius, 0, Math.PI * 2);
-      ctx.fillStyle = lifeGrad;
-      ctx.fill();
+      const lx = livesStartX + i * lifeSpacing + paddleWidth / 2;
+      const ly = 10;
+      drawPaddleShape(ctx, lx, ly, paddleWidth, paddleHeight, false);
     }
 
     // === Board transition screen ===
