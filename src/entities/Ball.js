@@ -102,6 +102,36 @@ export default class Ball {
     return false;
   }
 
+  updateGrabbed(newX, newY, deltaTime) {
+    const dx = newX - this.x;
+    const dy = newY - this.y;
+    this.x = newX;
+    this.y = newY;
+
+    if (this.isFireball) {
+      // Shift existing trail particles so they move with the grabbed ball
+      for (let i = 0; i < this.trail.length; i++) {
+        this.trail[i].x += dx;
+        this.trail[i].y += dy;
+      }
+
+      this.trailTimer += deltaTime;
+      if (this.trailTimer > 0.02) {
+        this.trail.unshift({ x: this.x, y: this.y, age: 0 });
+        this.trailTimer = 0;
+      }
+
+      for (let i = this.trail.length - 1; i >= 0; i--) {
+        this.trail[i].age += deltaTime;
+        if (this.trail[i].age > 0.3) {
+          this.trail.pop();
+        }
+      }
+    } else {
+      this.trail = [];
+    }
+  }
+
   draw(ctx) {
     // Draw trail
     if (this.isFireball && this.trail.length > 0) {

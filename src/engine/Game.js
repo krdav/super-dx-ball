@@ -74,8 +74,9 @@ export default class Game {
         let ball = this.balls[i];
 
         if (ball.isGrabbed) {
-          ball.x = this.paddle.x + ball.grabOffsetX;
-          ball.y = this.paddle.y - ball.radius;
+          const newX = this.paddle.x + ball.grabOffsetX;
+          const newY = this.paddle.y - ball.radius;
+          ball.updateGrabbed(newX, newY, deltaTime);
           
           if (this.input.keys.Space || this.input.isClicked) {
             ball.isGrabbed = false;
