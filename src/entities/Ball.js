@@ -44,6 +44,18 @@ export default class Ball {
   }
 
   update(deltaTime) {
+    // Prevent ball from bouncing perfectly or near perfectly horizontally
+    const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+    if (currentSpeed > 0) {
+      const minVy = currentSpeed * 0.15;
+      if (Math.abs(this.vy) < minVy) {
+        this.vy = this.vy >= 0 ? minVy : -minVy;
+        // Adjust vx to keep speed consistent
+        const newVx = Math.sqrt(Math.max(0, currentSpeed * currentSpeed - this.vy * this.vy));
+        this.vx = this.vx >= 0 ? newVx : -newVx;
+      }
+    }
+
     this.x += this.vx * deltaTime;
     this.y += this.vy * deltaTime;
 

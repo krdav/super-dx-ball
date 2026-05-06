@@ -107,7 +107,7 @@ export default class Game {
                 newBall.isFireball = ball.isFireball;
                 newBall.isMegaBall = ball.isMegaBall;
                 newBall.isThruBrick = ball.isThruBrick;
-                let angle = (Math.PI * 7/6) + (i / 6) * (Math.PI * 5/6);
+                let angle = (Math.PI * 7/6) + (i / 6) * (Math.PI * 4/6);
                 newBall.vx = newBall.speed * Math.cos(angle);
                 newBall.vy = newBall.speed * Math.sin(angle);
                 activeBalls.push(newBall);
@@ -382,7 +382,7 @@ export default class Game {
             newBall.isMegaBall = baseBall.isMegaBall;
             newBall.isThruBrick = baseBall.isThruBrick;
             // Spread balls in an upward fan: angles from ~210° to ~330° (avoiding near-horizontal)
-            let angle = (Math.PI * 7/6) + (i / 6) * (Math.PI * 5/6);
+            let angle = (Math.PI * 7/6) + (i / 6) * (Math.PI * 4/6);
             newBall.vx = newBall.speed * Math.cos(angle);
             newBall.vy = newBall.speed * Math.sin(angle);
             this.balls.push(newBall);
