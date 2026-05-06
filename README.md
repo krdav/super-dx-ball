@@ -6,7 +6,7 @@ A faithful web-based recreation of the classic **Super DX-Ball** arcade game, bu
 
 ## 🎮 Play
 
-**[Play Online →](https://YOUR_USERNAME.github.io/super-dx-ball/)**
+**[Play Online →](https://krdav.github.io/super-dx-ball/)**
 
 ## Features
 
