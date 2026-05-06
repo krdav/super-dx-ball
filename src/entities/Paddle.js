@@ -65,34 +65,36 @@ export function drawPaddleShape(ctx, x, y, width, height, isShooting, isGrab = f
   const h = height;
   const cornerRadius = 4;
 
-  // Blue metallic paddle — layered gradient
+  // Metallic grey paddle — layered gradient
   // Base shape
   const baseGrad = ctx.createLinearGradient(rx, ry, rx, ry + h);
-  baseGrad.addColorStop(0, '#6699DD');   // Bright top edge
-  baseGrad.addColorStop(0.15, '#4477CC'); // Bright blue
-  baseGrad.addColorStop(0.4, '#3366BB');  // Mid blue
-  baseGrad.addColorStop(0.5, '#5599EE');  // Bright center highlight strip
-  baseGrad.addColorStop(0.6, '#3366BB');  // Mid blue again
-  baseGrad.addColorStop(0.85, '#223388'); // Dark blue
-  baseGrad.addColorStop(1, '#111844');    // Very dark bottom edge
+  baseGrad.addColorStop(0, '#AAAAAA');   // Bright top edge
+  baseGrad.addColorStop(0.15, '#888888'); // Light grey
+  baseGrad.addColorStop(0.4, '#555555');  // Mid grey
+  baseGrad.addColorStop(0.5, '#CCCCCC');  // Bright center highlight strip
+  baseGrad.addColorStop(0.6, '#555555');  // Mid grey again
+  baseGrad.addColorStop(0.85, '#333333'); // Dark grey
+  baseGrad.addColorStop(1, '#111111');    // Very dark bottom edge
 
   ctx.fillStyle = baseGrad;
   ctx.beginPath();
   ctx.roundRect(rx, ry, width, h, cornerRadius);
   ctx.fill();
 
-  // Cyan/blue caps on the edges
-  const capWidth = 12;
+  // Light blue caps on the edges
+  // Calculate proportional cap width (roughly 12px for default 120px paddle width)
+  // Ensure a minimum width so it renders nicely on very small sizes
+  const capWidth = Math.max(2, width * 0.1);
 
   // Left cap gradient
   const leftCapGrad = ctx.createLinearGradient(rx, ry, rx, ry + h);
-  leftCapGrad.addColorStop(0, '#66DDDD');   // Bright top edge
-  leftCapGrad.addColorStop(0.15, '#44CCCC'); // Bright cyan
-  leftCapGrad.addColorStop(0.4, '#33BBBB');  // Mid cyan
-  leftCapGrad.addColorStop(0.5, '#55EEEE');  // Bright center highlight strip
-  leftCapGrad.addColorStop(0.6, '#33BBBB');  // Mid cyan again
-  leftCapGrad.addColorStop(0.85, '#228888'); // Dark cyan
-  leftCapGrad.addColorStop(1, '#114444');    // Very dark bottom edge
+  leftCapGrad.addColorStop(0, '#AADDFF');   // Bright top edge
+  leftCapGrad.addColorStop(0.15, '#66BBFF'); // Bright light blue
+  leftCapGrad.addColorStop(0.4, '#3399DD');  // Mid light blue
+  leftCapGrad.addColorStop(0.5, '#88CCFF');  // Bright center highlight strip
+  leftCapGrad.addColorStop(0.6, '#3399DD');  // Mid light blue again
+  leftCapGrad.addColorStop(0.85, '#1166AA'); // Dark light blue
+  leftCapGrad.addColorStop(1, '#003366');    // Very dark bottom edge
 
   ctx.fillStyle = leftCapGrad;
   ctx.beginPath();
@@ -101,13 +103,13 @@ export function drawPaddleShape(ctx, x, y, width, height, isShooting, isGrab = f
 
   // Right cap gradient
   const rightCapGrad = ctx.createLinearGradient(rx + width - capWidth, ry, rx + width - capWidth, ry + h);
-  rightCapGrad.addColorStop(0, '#66DDDD');   // Bright top edge
-  rightCapGrad.addColorStop(0.15, '#44CCCC'); // Bright cyan
-  rightCapGrad.addColorStop(0.4, '#33BBBB');  // Mid cyan
-  rightCapGrad.addColorStop(0.5, '#55EEEE');  // Bright center highlight strip
-  rightCapGrad.addColorStop(0.6, '#33BBBB');  // Mid cyan again
-  rightCapGrad.addColorStop(0.85, '#228888'); // Dark cyan
-  rightCapGrad.addColorStop(1, '#114444');    // Very dark bottom edge
+  rightCapGrad.addColorStop(0, '#AADDFF');   // Bright top edge
+  rightCapGrad.addColorStop(0.15, '#66BBFF'); // Bright light blue
+  rightCapGrad.addColorStop(0.4, '#3399DD');  // Mid light blue
+  rightCapGrad.addColorStop(0.5, '#88CCFF');  // Bright center highlight strip
+  rightCapGrad.addColorStop(0.6, '#3399DD');  // Mid light blue again
+  rightCapGrad.addColorStop(0.85, '#1166AA'); // Dark light blue
+  rightCapGrad.addColorStop(1, '#003366');    // Very dark bottom edge
 
   ctx.fillStyle = rightCapGrad;
   ctx.beginPath();
