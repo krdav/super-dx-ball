@@ -431,13 +431,16 @@ export default class Game {
     const cx = target.x + target.width / 2;
     const cy = target.y + target.height / 2;
     const explosionRange = (target.width + this.levelManager.padding) * (radius + 1);
+    const explosionRangeSq = explosionRange * explosionRange;
 
     for (let brick of this.levelManager.bricks) {
       if (!brick.active) continue;
       const bx = brick.x + brick.width / 2;
       const by = brick.y + brick.height / 2;
-      const dist = Math.sqrt((bx - cx) ** 2 + (by - cy) ** 2);
-      if (dist < explosionRange) {
+      const distX = bx - cx;
+      const distY = by - cy;
+      const distSq = (distX * distX) + (distY * distY);
+      if (distSq < explosionRangeSq) {
         brick.active = false;
         this.score += 10;
       }
@@ -459,9 +462,9 @@ export default class Game {
 
       let distX = ball.x - testX;
       let distY = ball.y - testY;
-      let distance = Math.sqrt((distX * distX) + (distY * distY));
+      let distanceSq = (distX * distX) + (distY * distY);
 
-      if (distance <= ball.radius) {
+      if (distanceSq <= ball.radius * ball.radius) {
         brick.active = false;
         this.score += 10;
         
