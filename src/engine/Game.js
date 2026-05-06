@@ -195,9 +195,8 @@ export default class Game {
             bullet.y < brick.y + brick.height &&
             bullet.y + bullet.height > brick.y
           ) {
-            brick.active = false;
+            this._destroyBrick(brick, 'EXPLODE');
             bullet.active = false;
-            this.score += 10;
             break;
           }
         }
@@ -230,14 +229,24 @@ export default class Game {
             brick.y += this.fallingBricksSpeed * deltaTime;
             // If brick reaches paddle area, game over for that life
             if (brick.y + brick.height > this.paddle.y) {
-              brick.active = false;
+              this._destroyBrick(brick, 'FADE', false);
             }
           }
         }
       }
 
+      // Update brick animations and logic
+      for (let brick of this.levelManager.bricks) {
+        if (brick.state !== 'DEAD') {
+          const signal = brick.update(deltaTime);
+          if (signal === 'ignite_neighbors') {
+            this._igniteNeighbors(brick);
+          }
+        }
+      }
+
       // Check for level completion
-      let activeBricks = this.levelManager.bricks.filter(b => b.active);
+      let activeBricks = this.levelManager.bricks.filter(b => b.active || b.state !== 'DEAD');
       if (activeBricks.length === 0) {
         this.advanceLevel();
       }
@@ -402,8 +411,7 @@ export default class Game {
         let count = Math.max(3, Math.floor(active.length * 0.2));
         for (let i = 0; i < count && active.length > 0; i++) {
           let idx = Math.floor(Math.random() * active.length);
-          active[idx].active = false;
-          this.score += 10;
+          this._destroyBrick(active[idx], 'EXPLODE');
           active.splice(idx, 1);
         }
         break;
@@ -465,6 +473,43 @@ export default class Game {
     }
   }
 
+  _destroyBrick(brick, type, addScore = true) {
+    if (!brick.active) return;
+    brick.active = false; // turn off collision immediately
+    if (addScore) {
+      this.score += 10;
+    }
+
+    brick.state = type;
+    brick.animTimer = 0;
+
+    if (type === 'EXPLODE') {
+      brick.initExplosion();
+    } else if (type === 'BURN') {
+      brick.updateColor('#FF8800'); // Orange burning color
+      brick.hasIgnited = false;
+    }
+  }
+
+  _igniteNeighbors(target) {
+    // Spread to horizontally and vertically adjacent bricks based on grid layout approximations
+    const spreadDistX = target.width * 1.5;
+    const spreadDistY = target.height * 1.5;
+
+    for (let brick of this.levelManager.bricks) {
+      if (!brick.active) continue;
+
+      const distX = Math.abs(brick.x - target.x);
+      const distY = Math.abs(brick.y - target.y);
+
+      // Check if it's a neighbor (either horizontally or vertically adjacent)
+      if ((distX < spreadDistX && distY < target.height * 0.5) ||
+          (distY < spreadDistY && distX < target.width * 0.5)) {
+        this._destroyBrick(brick, 'BURN');
+      }
+    }
+  }
+
   _explodeBrick(target, radius) {
     const cx = target.x + target.width / 2;
     const cy = target.y + target.height / 2;
@@ -479,8 +524,7 @@ export default class Game {
       const distY = by - cy;
       const distSq = (distX * distX) + (distY * distY);
       if (distSq < explosionRangeSq) {
-        brick.active = false;
-        this.score += 10;
+        this._destroyBrick(brick, 'EXPLODE');
       }
     }
   }
@@ -503,20 +547,19 @@ export default class Game {
       let distanceSq = (distX * distX) + (distY * distY);
 
       if (distanceSq <= ball.radius * ball.radius) {
-        brick.active = false;
-        this.score += 10;
-        
-        // 15% chance to drop a power-up
+        // Handle destruction and visual effects
+        let isExplosion = false;
         if (Math.random() < 0.15) {
+          isExplosion = true;
+          this._destroyBrick(brick, 'EXPLODE');
+
           const types = Object.values(POWERUP_TYPES);
           const randomType = types[Math.floor(Math.random() * types.length)];
           this.powerUps.push(new PowerUp(brick.x + brick.width / 2 - 15, brick.y, randomType));
-        }
-
-        // If Fireball, destroy surrounding bricks
-        if (ball.isFireball) {
-          // explosion radius for fireball
-          this._explodeBrick(brick, 0.5);
+        } else if (ball.isFireball) {
+          this._destroyBrick(brick, 'BURN');
+        } else {
+          this._destroyBrick(brick, 'FADE');
         }
 
         // Thru brick — no bounce, just destroy

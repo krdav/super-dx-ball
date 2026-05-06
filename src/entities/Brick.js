@@ -4,9 +4,17 @@ export default class Brick {
     this.y = y;
     this.width = width;
     this.height = height;
-    this.color = color;
-    this.active = true;
 
+    this.active = true; // used for collision
+    this.state = 'ACTIVE'; // ACTIVE, FADE, EXPLODE, BURN, DEAD
+    this.animTimer = 0;
+    this.particles = null;
+
+    this.updateColor(color);
+  }
+
+  updateColor(color) {
+    this.color = color;
     // Cache colors for performance
     this._cachedLighten45 = this._lighten(color, 0.45);
     this._cachedDarken45 = this._darken(color, 0.45);
@@ -14,8 +22,86 @@ export default class Brick {
     this._cachedDarken10 = this._darken(color, 0.1);
   }
 
+  initExplosion() {
+    this.particles = [];
+    const numParticles = 12;
+    const cx = this.x + this.width / 2;
+    const cy = this.y + this.height / 2;
+    for (let i = 0; i < numParticles; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 50 + 20; // 20 to 70 px/s
+      // fiery colors
+      const isRed = Math.random() < 0.5;
+      const pColor = isRed ? '#FF4400' : '#FFCC00';
+      this.particles.push({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 1.0,
+        color: pColor,
+        size: Math.random() * 3 + 2
+      });
+    }
+  }
+
+  update(deltaTime) {
+    if (this.state === 'ACTIVE' || this.state === 'DEAD') {
+      return;
+    }
+
+    this.animTimer += deltaTime;
+
+    if (this.state === 'FADE') {
+      if (this.animTimer >= 0.3) {
+        this.state = 'DEAD';
+      }
+    } else if (this.state === 'EXPLODE') {
+      let allDead = true;
+      for (let p of this.particles) {
+        p.x += p.vx * deltaTime;
+        p.y += p.vy * deltaTime;
+        p.life -= deltaTime * 1.5; // die in ~0.66s
+        if (p.life > 0) allDead = false;
+      }
+      if (allDead) {
+        this.state = 'DEAD';
+      }
+    } else if (this.state === 'BURN') {
+      // Burn spreads after a delay
+      if (this.animTimer >= 0.25) {
+        // Only return ignite_neighbors once
+        if (!this.hasIgnited) {
+          this.hasIgnited = true;
+          return 'ignite_neighbors';
+        }
+      }
+      if (this.animTimer >= 0.5) { // die after 0.5s of burning
+        this.state = 'DEAD';
+      }
+    }
+  }
+
   draw(ctx) {
-    if (!this.active) return;
+    if (this.state === 'DEAD') return;
+
+    if (this.state === 'EXPLODE') {
+      for (let p of this.particles) {
+        if (p.life > 0) {
+          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1.0;
+      return; // Only draw particles
+    }
+
+    if (this.state === 'FADE') {
+      ctx.globalAlpha = Math.max(0, 1.0 - (this.animTimer / 0.3));
+    }
 
     const x = this.x;
     const y = this.y;
@@ -60,6 +146,10 @@ export default class Brick {
     ctx.strokeStyle = '#111';
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+
+    if (this.state === 'FADE') {
+      ctx.globalAlpha = 1.0;
+    }
   }
 
   _lighten(hex, factor) {
