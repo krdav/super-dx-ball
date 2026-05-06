@@ -19,6 +19,8 @@ export default class Ball {
     this.isThruBrick = false;
     this.isGrabbed = false;
     this.grabOffsetX = 0;
+    this.pendingSplits = 0;
+    this.pendingEightBalls = 0;
 
     // Trail particles for fireball
     this.trail = [];
@@ -32,6 +34,8 @@ export default class Ball {
     this.isMegaBall = false;
     this.isThruBrick = false;
     this.isGrabbed = false;
+    this.pendingSplits = 0;
+    this.pendingEightBalls = 0;
   }
 
   start() {

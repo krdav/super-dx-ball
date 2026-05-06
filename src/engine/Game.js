@@ -82,6 +82,38 @@ export default class Game {
             ballReleasedThisFrame = true;
             ball.vy = -Math.abs(ball.speed * 0.8);
             ball.vx = (ball.grabOffsetX / (this.paddle.width / 2)) * ball.speed;
+
+            // Process pending splits
+            for (let s = 0; s < ball.pendingSplits; s++) {
+              let clone = new Ball(this.width, this.height);
+              clone.x = ball.x;
+              clone.y = ball.y;
+              clone.isFireball = ball.isFireball;
+              clone.isMegaBall = ball.isMegaBall;
+              clone.isThruBrick = ball.isThruBrick;
+              clone.radius = ball.radius;
+              clone.vx = -ball.vx;
+              clone.vy = ball.vy;
+              activeBalls.push(clone);
+            }
+            ball.pendingSplits = 0;
+
+            // Process pending eight-balls
+            for (let eb = 0; eb < ball.pendingEightBalls; eb++) {
+              for (let i = 0; i < 7; i++) {
+                let newBall = new Ball(this.width, this.height);
+                newBall.x = ball.x;
+                newBall.y = ball.y;
+                newBall.isFireball = ball.isFireball;
+                newBall.isMegaBall = ball.isMegaBall;
+                newBall.isThruBrick = ball.isThruBrick;
+                let angle = (Math.PI * 7/6) + (i / 6) * (Math.PI * 5/6);
+                newBall.vx = newBall.speed * Math.cos(angle);
+                newBall.vy = newBall.speed * Math.sin(angle);
+                activeBalls.push(newBall);
+              }
+            }
+            ball.pendingEightBalls = 0;
           }
           activeBalls.push(ball);
         } else {
@@ -339,18 +371,22 @@ export default class Game {
       case 'eight_ball': {
         let baseBall = this.balls[0];
         if (!baseBall) break;
-        for (let i = 0; i < 7; i++) {
-          let newBall = new Ball(this.width, this.height);
-          newBall.x = baseBall.x;
-          newBall.y = baseBall.y;
-          newBall.isFireball = baseBall.isFireball;
-          newBall.isMegaBall = baseBall.isMegaBall;
-          newBall.isThruBrick = baseBall.isThruBrick;
-          // Spread balls in an upward fan: angles from ~210° to ~330° (avoiding near-horizontal)
-          let angle = (Math.PI * 7/6) + (i / 6) * (Math.PI * 5/6);
-          newBall.vx = newBall.speed * Math.cos(angle);
-          newBall.vy = newBall.speed * Math.sin(angle);
-          this.balls.push(newBall);
+        if (baseBall.isGrabbed) {
+          baseBall.pendingEightBalls++;
+        } else {
+          for (let i = 0; i < 7; i++) {
+            let newBall = new Ball(this.width, this.height);
+            newBall.x = baseBall.x;
+            newBall.y = baseBall.y;
+            newBall.isFireball = baseBall.isFireball;
+            newBall.isMegaBall = baseBall.isMegaBall;
+            newBall.isThruBrick = baseBall.isThruBrick;
+            // Spread balls in an upward fan: angles from ~210° to ~330° (avoiding near-horizontal)
+            let angle = (Math.PI * 7/6) + (i / 6) * (Math.PI * 5/6);
+            newBall.vx = newBall.speed * Math.cos(angle);
+            newBall.vy = newBall.speed * Math.sin(angle);
+            this.balls.push(newBall);
+          }
         }
         break;
       }
@@ -380,7 +416,9 @@ export default class Game {
       case 'split_ball': {
         let newBalls = [];
         this.balls.forEach(b => {
-          if (!b.isGrabbed) {
+          if (b.isGrabbed) {
+            b.pendingSplits++;
+          } else {
             let clone = new Ball(this.width, this.height);
             clone.x = b.x;
             clone.y = b.y;
