@@ -593,26 +593,49 @@ export default class Game {
   }
 
   draw() {
+    const ctx = this.ctx;
+
     // Black background
-    this.ctx.fillStyle = '#000000';
-    this.ctx.fillRect(0, 0, this.width, this.height);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, this.width, this.height);
 
     // Check if any ball is currently grabbed to inform paddle drawing
     const isAnyBallGrabbed = this.balls.some(b => b.isGrabbed);
 
-    // Draw bricks, powerups, bullets, paddle, balls
-    this.levelManager.draw(this.ctx);
-    this.powerUps.forEach(p => p.draw(this.ctx));
-    this.bullets.forEach(b => b.draw(this.ctx));
-    // Pass isAnyBallGrabbed to the paddle draw call to handle the grab arch
-    this.paddle.draw(this.ctx, isAnyBallGrabbed);
-    this.balls.forEach(b => b.draw(this.ctx));
+    // Draw bricks
+    ctx.save();
+    this.levelManager.draw(ctx);
+    ctx.restore();
+
+    // Draw powerups (isolated — broken images can't corrupt context)
+    ctx.save();
+    this.powerUps.forEach(p => p.draw(ctx));
+    ctx.restore();
+
+    // Draw bullets
+    ctx.save();
+    this.bullets.forEach(b => b.draw(ctx));
+    ctx.restore();
+
+    // Draw paddle
+    ctx.save();
+    this.paddle.draw(ctx, isAnyBallGrabbed);
+    ctx.restore();
+
+    // Draw balls
+    ctx.save();
+    this.balls.forEach(b => b.draw(ctx));
+    ctx.restore();
 
     // Draw pillar walls ON TOP of everything
-    this._drawPillars(this.ctx);
+    ctx.save();
+    this._drawPillars(ctx);
+    ctx.restore();
 
     // HUD
+    ctx.save();
     this.drawUI();
+    ctx.restore();
   }
 
   _drawPillars(ctx) {

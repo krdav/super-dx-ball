@@ -55,8 +55,17 @@ export default class PowerUp {
     if (!this.active) return;
     
     const img = loadedImages[this.type.id];
-    if (img && img.complete) {
+    if (img && img.complete && img.naturalWidth > 0) {
       ctx.drawImage(img, this.x, this.y, this.width, this.height);
+    } else {
+      // Fallback: draw a colored rectangle with "?" if image failed
+      ctx.fillStyle = '#555555';
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.fillStyle = '#FFFF00';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', this.x + this.width / 2, this.y + this.height / 2);
     }
   }
 }
