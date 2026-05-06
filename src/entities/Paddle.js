@@ -98,7 +98,7 @@ export function drawPaddleShape(ctx, x, y, width, height, isShooting, isGrab = f
 
   ctx.fillStyle = leftCapGrad;
   ctx.beginPath();
-  ctx.roundRect(rx, ry, capWidth, h, {tl: cornerRadius, bl: cornerRadius, tr: 0, br: 0});
+  ctx.roundRect(rx, ry, capWidth, h, [cornerRadius, 0, 0, cornerRadius]);
   ctx.fill();
 
   // Right cap gradient
@@ -113,7 +113,7 @@ export function drawPaddleShape(ctx, x, y, width, height, isShooting, isGrab = f
 
   ctx.fillStyle = rightCapGrad;
   ctx.beginPath();
-  ctx.roundRect(rx + width - capWidth, ry, capWidth, h, {tl: 0, bl: 0, tr: cornerRadius, br: cornerRadius});
+  ctx.roundRect(rx + width - capWidth, ry, capWidth, h, [0, cornerRadius, cornerRadius, 0]);
   ctx.fill();
 
   // Draw separator lines for the caps
