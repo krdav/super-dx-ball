@@ -20,7 +20,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Build site
+        run: npm ci && npm run build
+
       - name: Deploy preview
         uses: rossjrw/pr-preview-action@v1
         with:
-          source-dir: .
+          source-dir: ./dist
