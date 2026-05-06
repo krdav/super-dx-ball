@@ -51,51 +51,101 @@ export default class Paddle {
   }
 
   draw(ctx) {
-    const rx = this.x - this.width / 2;
-    const ry = this.y;
-    const h = this.height;
-    const cornerRadius = 4;
+    drawPaddleShape(ctx, this.x, this.y, this.width, this.height, this.isShooting);
+  }
+}
 
-    // Blue metallic paddle — layered gradient
-    // Base shape
-    const baseGrad = ctx.createLinearGradient(rx, ry, rx, ry + h);
-    baseGrad.addColorStop(0, '#6699DD');   // Bright top edge
-    baseGrad.addColorStop(0.15, '#4477CC'); // Bright blue
-    baseGrad.addColorStop(0.4, '#3366BB');  // Mid blue
-    baseGrad.addColorStop(0.5, '#5599EE');  // Bright center highlight strip
-    baseGrad.addColorStop(0.6, '#3366BB');  // Mid blue again
-    baseGrad.addColorStop(0.85, '#223388'); // Dark blue
-    baseGrad.addColorStop(1, '#111844');    // Very dark bottom edge
+export function drawPaddleShape(ctx, x, y, width, height, isShooting) {
+  const rx = x - width / 2;
+  const ry = y;
+  const h = height;
+  const cornerRadius = 4;
 
-    ctx.fillStyle = baseGrad;
-    ctx.beginPath();
-    ctx.roundRect(rx, ry, this.width, h, cornerRadius);
-    ctx.fill();
+  // Blue metallic paddle — layered gradient
+  // Base shape
+  const baseGrad = ctx.createLinearGradient(rx, ry, rx, ry + h);
+  baseGrad.addColorStop(0, '#6699DD');   // Bright top edge
+  baseGrad.addColorStop(0.15, '#4477CC'); // Bright blue
+  baseGrad.addColorStop(0.4, '#3366BB');  // Mid blue
+  baseGrad.addColorStop(0.5, '#5599EE');  // Bright center highlight strip
+  baseGrad.addColorStop(0.6, '#3366BB');  // Mid blue again
+  baseGrad.addColorStop(0.85, '#223388'); // Dark blue
+  baseGrad.addColorStop(1, '#111844');    // Very dark bottom edge
 
-    // Thin specular highlight line across the top
-    ctx.strokeStyle = 'rgba(180, 210, 255, 0.6)';
+  ctx.fillStyle = baseGrad;
+  ctx.beginPath();
+  ctx.roundRect(rx, ry, width, h, cornerRadius);
+  ctx.fill();
+
+  // Cyan/blue caps on the edges
+  const capWidth = 12;
+
+  // Left cap gradient
+  const leftCapGrad = ctx.createLinearGradient(rx, ry, rx, ry + h);
+  leftCapGrad.addColorStop(0, '#66DDDD');   // Bright top edge
+  leftCapGrad.addColorStop(0.15, '#44CCCC'); // Bright cyan
+  leftCapGrad.addColorStop(0.4, '#33BBBB');  // Mid cyan
+  leftCapGrad.addColorStop(0.5, '#55EEEE');  // Bright center highlight strip
+  leftCapGrad.addColorStop(0.6, '#33BBBB');  // Mid cyan again
+  leftCapGrad.addColorStop(0.85, '#228888'); // Dark cyan
+  leftCapGrad.addColorStop(1, '#114444');    // Very dark bottom edge
+
+  ctx.fillStyle = leftCapGrad;
+  ctx.beginPath();
+  ctx.roundRect(rx, ry, capWidth, h, {tl: cornerRadius, bl: cornerRadius, tr: 0, br: 0});
+  ctx.fill();
+
+  // Right cap gradient
+  const rightCapGrad = ctx.createLinearGradient(rx + width - capWidth, ry, rx + width - capWidth, ry + h);
+  rightCapGrad.addColorStop(0, '#66DDDD');   // Bright top edge
+  rightCapGrad.addColorStop(0.15, '#44CCCC'); // Bright cyan
+  rightCapGrad.addColorStop(0.4, '#33BBBB');  // Mid cyan
+  rightCapGrad.addColorStop(0.5, '#55EEEE');  // Bright center highlight strip
+  rightCapGrad.addColorStop(0.6, '#33BBBB');  // Mid cyan again
+  rightCapGrad.addColorStop(0.85, '#228888'); // Dark cyan
+  rightCapGrad.addColorStop(1, '#114444');    // Very dark bottom edge
+
+  ctx.fillStyle = rightCapGrad;
+  ctx.beginPath();
+  ctx.roundRect(rx + width - capWidth, ry, capWidth, h, {tl: 0, bl: 0, tr: cornerRadius, br: cornerRadius});
+  ctx.fill();
+
+  // Draw separator lines for the caps
+  ctx.strokeStyle = '#0A0A3A';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(rx + capWidth, ry);
+  ctx.lineTo(rx + capWidth, ry + h);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(rx + width - capWidth, ry);
+  ctx.lineTo(rx + width - capWidth, ry + h);
+  ctx.stroke();
+
+  // Thin specular highlight line across the top
+  ctx.strokeStyle = 'rgba(180, 210, 255, 0.6)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(rx + cornerRadius, ry + 2);
+  ctx.lineTo(rx + width - cornerRadius, ry + 2);
+  ctx.stroke();
+
+  // Dark border
+  ctx.strokeStyle = '#0A0A3A';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(rx, ry, width, h, cornerRadius);
+  ctx.stroke();
+
+  // If shooting mode, draw small gun barrels
+  if (isShooting) {
+    ctx.fillStyle = '#99BBEE';
+    ctx.fillRect(rx + capWidth + 2, ry - 4, 4, 6);
+    ctx.fillRect(rx + width - capWidth - 6, ry - 4, 4, 6);
+    ctx.strokeStyle = '#223388';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(rx + cornerRadius, ry + 2);
-    ctx.lineTo(rx + this.width - cornerRadius, ry + 2);
-    ctx.stroke();
-
-    // Dark border
-    ctx.strokeStyle = '#0A0A3A';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect(rx, ry, this.width, h, cornerRadius);
-    ctx.stroke();
-
-    // If shooting mode, draw small gun barrels
-    if (this.isShooting) {
-      ctx.fillStyle = '#99BBEE';
-      ctx.fillRect(rx + 3, ry - 4, 4, 6);
-      ctx.fillRect(rx + this.width - 7, ry - 4, 4, 6);
-      ctx.strokeStyle = '#223388';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(rx + 3, ry - 4, 4, 6);
-      ctx.strokeRect(rx + this.width - 7, ry - 4, 4, 6);
-    }
+    ctx.strokeRect(rx + capWidth + 2, ry - 4, 4, 6);
+    ctx.strokeRect(rx + width - capWidth - 6, ry - 4, 4, 6);
   }
 }
