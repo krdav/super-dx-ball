@@ -19,6 +19,10 @@ export default class Ball {
     this.isThruBrick = false;
     this.isGrabbed = false;
     this.grabOffsetX = 0;
+
+    // Trail particles for fireball
+    this.trail = [];
+    this.trailTimer = 0;
   }
 
   reset() {
@@ -38,6 +42,26 @@ export default class Ball {
   update(deltaTime) {
     this.x += this.vx * deltaTime;
     this.y += this.vy * deltaTime;
+
+    // Update trail
+    if (this.isFireball) {
+      this.trailTimer += deltaTime;
+      // Add a new trail particle every 0.02 seconds
+      if (this.trailTimer > 0.02) {
+        this.trail.unshift({ x: this.x, y: this.y, age: 0 });
+        this.trailTimer = 0;
+      }
+
+      // Update trail ages and remove old ones
+      for (let i = this.trail.length - 1; i >= 0; i--) {
+        this.trail[i].age += deltaTime;
+        if (this.trail[i].age > 0.3) { // Max lifetime 0.3s
+          this.trail.pop();
+        }
+      }
+    } else {
+      this.trail = [];
+    }
 
     // Pillar wall collisions (Left & Right)
     if (this.x - this.radius < PLAYFIELD_LEFT) {
@@ -63,6 +87,30 @@ export default class Ball {
   }
 
   draw(ctx) {
+    // Draw trail
+    if (this.isFireball && this.trail.length > 0) {
+      for (let i = 0; i < this.trail.length; i++) {
+        let p = this.trail[i];
+        let opacity = 1.0 - (p.age / 0.3); // Fade out based on age
+        let size = (1.0 - (p.age / 0.3)) * (this.radius * 0.8); // Shrink slightly
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200, 30, 0, ${opacity * 0.8})`; // Red/orange trailing dots
+        ctx.fill();
+
+        // Add random scatter dots occasionally for more "fire" feel
+        if (Math.random() < 0.3) {
+          ctx.beginPath();
+          let offsetX = (Math.random() - 0.5) * 8;
+          let offsetY = (Math.random() - 0.5) * 8;
+          ctx.arc(p.x + offsetX, p.y + offsetY, size * 0.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 100, 0, ${opacity * 0.9})`; // Brighter orange scatter
+          ctx.fill();
+        }
+      }
+    }
+
     // Determine ball color
     let baseColor, highlightColor;
     if (this.isFireball) {

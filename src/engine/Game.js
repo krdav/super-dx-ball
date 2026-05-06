@@ -512,11 +512,15 @@ export default class Game {
     this.ctx.fillStyle = '#000000';
     this.ctx.fillRect(0, 0, this.width, this.height);
 
+    // Check if any ball is currently grabbed to inform paddle drawing
+    const isAnyBallGrabbed = this.balls.some(b => b.isGrabbed);
+
     // Draw bricks, powerups, bullets, paddle, balls
     this.levelManager.draw(this.ctx);
     this.powerUps.forEach(p => p.draw(this.ctx));
     this.bullets.forEach(b => b.draw(this.ctx));
-    this.paddle.draw(this.ctx);
+    // Pass isAnyBallGrabbed to the paddle draw call to handle the grab arch
+    this.paddle.draw(this.ctx, isAnyBallGrabbed);
     this.balls.forEach(b => b.draw(this.ctx));
 
     // Draw pillar walls ON TOP of everything

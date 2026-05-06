@@ -18,9 +18,13 @@ export default class Paddle {
     
     // Track previous mouse position to know if it moved
     this.lastMouseX = inputHandler.mouseX;
+
+    // Grab animation timer
+    this.grabAnimTimer = 0;
   }
 
   update(deltaTime) {
+    this.grabAnimTimer += deltaTime;
     // 1. Keyboard movement
     if (this.input.keys.ArrowLeft) {
       this.x -= this.speed * deltaTime;
@@ -50,12 +54,12 @@ export default class Paddle {
     }
   }
 
-  draw(ctx) {
-    drawPaddleShape(ctx, this.x, this.y, this.width, this.height, this.isShooting);
+  draw(ctx, isAnyBallGrabbed) {
+    drawPaddleShape(ctx, this.x, this.y, this.width, this.height, this.isShooting, this.isGrab, this.grabAnimTimer, isAnyBallGrabbed);
   }
 }
 
-export function drawPaddleShape(ctx, x, y, width, height, isShooting) {
+export function drawPaddleShape(ctx, x, y, width, height, isShooting, isGrab = false, animTimer = 0, isAnyBallGrabbed = false) {
   const rx = x - width / 2;
   const ry = y;
   const h = height;
@@ -147,5 +151,58 @@ export function drawPaddleShape(ctx, x, y, width, height, isShooting) {
     ctx.lineWidth = 1;
     ctx.strokeRect(rx + capWidth + 2, ry - 4, 4, 6);
     ctx.strokeRect(rx + width - capWidth - 6, ry - 4, 4, 6);
+  }
+
+  // Draw Grab Electrodes and Arch
+  if (isGrab && isAnyBallGrabbed) {
+    // Left Electrode
+    ctx.fillStyle = '#66DDDD';
+    ctx.beginPath();
+    ctx.arc(rx + capWidth / 2, ry - 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#114444';
+    ctx.stroke();
+
+    // Right Electrode
+    ctx.fillStyle = '#66DDDD';
+    ctx.beginPath();
+    ctx.arc(rx + width - capWidth / 2, ry - 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#114444';
+    ctx.stroke();
+
+    // Draw chaotic electrical arch between electrodes
+    const startX = rx + capWidth / 2;
+    const endX = rx + width - capWidth / 2;
+    const archY = ry - 2;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(180, 220, 255, 0.7)'; // Light blue, semi-transparent
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(startX, archY);
+
+    const segments = 15;
+    const segmentWidth = (endX - startX) / segments;
+
+    for (let i = 1; i < segments; i++) {
+      let px = startX + (i * segmentWidth);
+      // Random displacement on Y axis to create wavy/spiky effect, animated by time
+      let py = archY - 2 + (Math.sin(animTimer * 20 + i) * 3) + (Math.random() * 4 - 2);
+      ctx.lineTo(px, py);
+    }
+    ctx.lineTo(endX, archY);
+
+    // Add outer glow for the lightning
+    ctx.shadowColor = '#88CCFF';
+    ctx.shadowBlur = 5;
+    ctx.stroke();
+
+    // Draw inner bright core
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.restore();
   }
 }
