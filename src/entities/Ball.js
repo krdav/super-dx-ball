@@ -109,10 +109,12 @@ export default class Ball {
     this.y = newY;
 
     if (this.isFireball) {
-      // Shift existing trail particles so they move with the grabbed ball
+      // Shift existing trail particles so they move with the grabbed ball, with drag and upward movement
       for (let i = 0; i < this.trail.length; i++) {
-        this.trail[i].x += dx;
-        this.trail[i].y += dy;
+        const drag = Math.max(0, 1.0 - (this.trail[i].age / 0.3));
+        this.trail[i].x += dx * drag;
+        this.trail[i].y += dy * drag;
+        this.trail[i].y -= 150 * deltaTime; // Make the flame rise upward
       }
 
       this.trailTimer += deltaTime;
