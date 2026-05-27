@@ -3,6 +3,7 @@ import Paddle, { drawPaddleShape } from '../entities/Paddle.js';
 import Ball from '../entities/Ball.js';
 import Bullet from '../entities/Bullet.js';
 import LevelManager from './LevelManager.js';
+import { secureRandom } from './Utils.js';
 import PowerUp, { POWERUP_TYPES } from '../entities/PowerUp.js';
 import {
   PILLAR_WIDTH, CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -411,7 +412,7 @@ export default class Game {
         let active = this.levelManager.bricks.filter(b => b.active);
         let count = Math.max(3, Math.floor(active.length * 0.2));
         for (let i = 0; i < count && active.length > 0; i++) {
-          let idx = Math.floor(Math.random() * active.length);
+          let idx = Math.floor(secureRandom() * active.length);
           this._destroyBrick(active[idx], 'EXPLODE');
           active.splice(idx, 1);
         }
@@ -454,7 +455,7 @@ export default class Game {
         // Explode a random active brick and its neighbors
         let activeBricks = this.levelManager.bricks.filter(b => b.active);
         if (activeBricks.length > 0) {
-          let target = activeBricks[Math.floor(Math.random() * activeBricks.length)];
+          let target = activeBricks[Math.floor(secureRandom() * activeBricks.length)];
           this._explodeBrick(target, 1);
         }
         break;
@@ -463,7 +464,7 @@ export default class Game {
         // Larger explosion — bigger radius
         let activeBricks2 = this.levelManager.bricks.filter(b => b.active);
         if (activeBricks2.length > 0) {
-          let target = activeBricks2[Math.floor(Math.random() * activeBricks2.length)];
+          let target = activeBricks2[Math.floor(secureRandom() * activeBricks2.length)];
           this._explodeBrick(target, 2);
         }
         break;
@@ -550,12 +551,12 @@ export default class Game {
       if (distanceSq <= ball.radius * ball.radius) {
         // Handle destruction and visual effects
         let isExplosion = false;
-        if (Math.random() < 0.15) {
+        if (secureRandom() < 0.15) {
           isExplosion = true;
           this._destroyBrick(brick, 'EXPLODE');
 
           const types = Object.values(POWERUP_TYPES);
-          const randomType = types[Math.floor(Math.random() * types.length)];
+          const randomType = types[Math.floor(secureRandom() * types.length)];
           this.powerUps.push(new PowerUp(brick.x + brick.width / 2 - 15, brick.y, randomType));
         } else if (ball.isFireball) {
           this._destroyBrick(brick, 'BURN');
