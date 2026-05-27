@@ -20,6 +20,9 @@ export default class Brick {
     this._cachedDarken45 = this._darken(color, 0.45);
     this._cachedLighten15 = this._lighten(color, 0.15);
     this._cachedDarken10 = this._darken(color, 0.1);
+    this._cachedGradient = null;
+    this._cachedGradY = null;
+    this._cachedGradH = null;
   }
 
   initExplosion() {
@@ -136,10 +139,15 @@ export default class Brick {
     ctx.fill();
 
     // Inner face — slightly different shade for depth
-    const innerGrad = ctx.createLinearGradient(x, y, x, y + h);
-    innerGrad.addColorStop(0, this._cachedLighten15);
-    innerGrad.addColorStop(1, this._cachedDarken10);
-    ctx.fillStyle = innerGrad;
+    // Gradient depends on absolute Y and Height
+    if (!this._cachedGradient || this._cachedGradY !== y || this._cachedGradH !== h) {
+      this._cachedGradient = ctx.createLinearGradient(x, y, x, y + h);
+      this._cachedGradient.addColorStop(0, this._cachedLighten15);
+      this._cachedGradient.addColorStop(1, this._cachedDarken10);
+      this._cachedGradY = y;
+      this._cachedGradH = h;
+    }
+    ctx.fillStyle = this._cachedGradient;
     ctx.fillRect(x + bevel, y + bevel, w - bevel * 2, h - bevel * 2);
 
     // 1px dark outer border
