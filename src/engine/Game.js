@@ -1,5 +1,5 @@
 import InputHandler from './InputHandler.js';
-import Paddle from '../entities/Paddle.js';
+import Paddle, { drawPaddleShape } from '../entities/Paddle.js';
 import Ball from '../entities/Ball.js';
 import Bullet from '../entities/Bullet.js';
 import LevelManager from './LevelManager.js';
@@ -75,14 +75,47 @@ export default class Game {
         let ball = this.balls[i];
 
         if (ball.isGrabbed) {
-          ball.x = this.paddle.x + ball.grabOffsetX;
-          ball.y = this.paddle.y - ball.radius;
+          const newX = this.paddle.x + ball.grabOffsetX;
+          const newY = this.paddle.y - ball.radius;
+          ball.updateGrabbed(newX, newY, deltaTime);
           
           if (this.input.keys.Space || this.input.isClicked) {
             ball.isGrabbed = false;
             ballReleasedThisFrame = true;
             ball.vy = -Math.abs(ball.speed * 0.8);
             ball.vx = (ball.grabOffsetX / (this.paddle.width / 2)) * ball.speed;
+
+            // Process pending splits
+            for (let s = 0; s < ball.pendingSplits; s++) {
+              let clone = new Ball(this.width, this.height);
+              clone.x = ball.x;
+              clone.y = ball.y;
+              clone.isFireball = ball.isFireball;
+              clone.isMegaBall = ball.isMegaBall;
+              clone.isThruBrick = ball.isThruBrick;
+              clone.radius = ball.radius;
+              clone.vx = -ball.vx;
+              clone.vy = ball.vy;
+              activeBalls.push(clone);
+            }
+            ball.pendingSplits = 0;
+
+            // Process pending eight-balls
+            for (let eb = 0; eb < ball.pendingEightBalls; eb++) {
+              for (let i = 0; i < 7; i++) {
+                let newBall = new Ball(this.width, this.height);
+                newBall.x = ball.x;
+                newBall.y = ball.y;
+                newBall.isFireball = ball.isFireball;
+                newBall.isMegaBall = ball.isMegaBall;
+                newBall.isThruBrick = ball.isThruBrick;
+                let angle = (Math.PI * 7/6) + (i / 6) * (Math.PI * 4/6);
+                newBall.vx = newBall.speed * Math.cos(angle);
+                newBall.vy = newBall.speed * Math.sin(angle);
+                activeBalls.push(newBall);
+              }
+            }
+            ball.pendingEightBalls = 0;
           }
           activeBalls.push(ball);
         } else {
@@ -164,9 +197,8 @@ export default class Game {
             bullet.y < brick.y + brick.height &&
             bullet.y + bullet.height > brick.y
           ) {
-            brick.active = false;
+            this._destroyBrick(brick, 'EXPLODE');
             bullet.active = false;
-            this.score += 10;
             break;
           }
         }
@@ -199,14 +231,24 @@ export default class Game {
             brick.y += this.fallingBricksSpeed * deltaTime;
             // If brick reaches paddle area, game over for that life
             if (brick.y + brick.height > this.paddle.y) {
-              brick.active = false;
+              this._destroyBrick(brick, 'FADE', false);
             }
           }
         }
       }
 
+      // Update brick animations and logic
+      for (let brick of this.levelManager.bricks) {
+        if (brick.state !== 'DEAD') {
+          const signal = brick.update(deltaTime);
+          if (signal === 'ignite_neighbors') {
+            this._igniteNeighbors(brick);
+          }
+        }
+      }
+
       // Check for level completion
-      let activeBricks = this.levelManager.bricks.filter(b => b.active);
+      let activeBricks = this.levelManager.bricks.filter(b => b.active || b.state !== 'DEAD');
       if (activeBricks.length === 0) {
         this.advanceLevel();
       }
@@ -340,18 +382,22 @@ export default class Game {
       case 'eight_ball': {
         let baseBall = this.balls[0];
         if (!baseBall) break;
-        for (let i = 0; i < 7; i++) {
-          let newBall = new Ball(this.width, this.height);
-          newBall.x = baseBall.x;
-          newBall.y = baseBall.y;
-          newBall.isFireball = baseBall.isFireball;
-          newBall.isMegaBall = baseBall.isMegaBall;
-          newBall.isThruBrick = baseBall.isThruBrick;
-          // Spread balls in an upward fan: angles from ~210° to ~330° (avoiding near-horizontal)
-          let angle = (Math.PI * 7/6) + (i / 6) * (Math.PI * 5/6);
-          newBall.vx = newBall.speed * Math.cos(angle);
-          newBall.vy = newBall.speed * Math.sin(angle);
-          this.balls.push(newBall);
+        if (baseBall.isGrabbed) {
+          baseBall.pendingEightBalls++;
+        } else {
+          for (let i = 0; i < 7; i++) {
+            let newBall = new Ball(this.width, this.height);
+            newBall.x = baseBall.x;
+            newBall.y = baseBall.y;
+            newBall.isFireball = baseBall.isFireball;
+            newBall.isMegaBall = baseBall.isMegaBall;
+            newBall.isThruBrick = baseBall.isThruBrick;
+            // Spread balls in an upward fan: angles from ~210° to ~330° (avoiding near-horizontal)
+            let angle = (Math.PI * 7/6) + (i / 6) * (Math.PI * 4/6);
+            newBall.vx = newBall.speed * Math.cos(angle);
+            newBall.vy = newBall.speed * Math.sin(angle);
+            this.balls.push(newBall);
+          }
         }
         break;
       }
@@ -367,8 +413,7 @@ export default class Game {
         let count = Math.max(3, Math.floor(active.length * 0.2));
         for (let i = 0; i < count && active.length > 0; i++) {
           let idx = Math.floor(secureRandom() * active.length);
-          active[idx].active = false;
-          this.score += 10;
+          this._destroyBrick(active[idx], 'EXPLODE');
           active.splice(idx, 1);
         }
         break;
@@ -381,7 +426,9 @@ export default class Game {
       case 'split_ball': {
         let newBalls = [];
         this.balls.forEach(b => {
-          if (!b.isGrabbed) {
+          if (b.isGrabbed) {
+            b.pendingSplits++;
+          } else {
             let clone = new Ball(this.width, this.height);
             clone.x = b.x;
             clone.y = b.y;
@@ -428,19 +475,58 @@ export default class Game {
     }
   }
 
+  _destroyBrick(brick, type, addScore = true) {
+    if (!brick.active) return;
+    brick.active = false; // turn off collision immediately
+    if (addScore) {
+      this.score += 10;
+    }
+
+    brick.state = type;
+    brick.animTimer = 0;
+
+    if (type === 'EXPLODE') {
+      brick.initExplosion();
+    } else if (type === 'BURN') {
+      brick.updateColor('#FF8800'); // Orange burning color
+      brick.hasIgnited = false;
+    }
+  }
+
+  _igniteNeighbors(target) {
+    // Spread to horizontally and vertically adjacent bricks based on grid layout approximations
+    const spreadDistX = target.width * 1.5;
+    const spreadDistY = target.height * 1.5;
+
+    for (let brick of this.levelManager.bricks) {
+      if (!brick.active) continue;
+
+      const distX = Math.abs(brick.x - target.x);
+      const distY = Math.abs(brick.y - target.y);
+
+      // Check if it's a neighbor (either horizontally or vertically adjacent)
+      if ((distX < spreadDistX && distY < target.height * 0.5) ||
+          (distY < spreadDistY && distX < target.width * 0.5)) {
+        this._destroyBrick(brick, 'BURN');
+      }
+    }
+  }
+
   _explodeBrick(target, radius) {
     const cx = target.x + target.width / 2;
     const cy = target.y + target.height / 2;
     const explosionRange = (target.width + this.levelManager.padding) * (radius + 1);
+    const explosionRangeSq = explosionRange * explosionRange;
 
     for (let brick of this.levelManager.bricks) {
       if (!brick.active) continue;
       const bx = brick.x + brick.width / 2;
       const by = brick.y + brick.height / 2;
-      const dist = Math.sqrt((bx - cx) ** 2 + (by - cy) ** 2);
-      if (dist < explosionRange) {
-        brick.active = false;
-        this.score += 10;
+      const distX = bx - cx;
+      const distY = by - cy;
+      const distSq = (distX * distX) + (distY * distY);
+      if (distSq < explosionRangeSq) {
+        this._destroyBrick(brick, 'EXPLODE');
       }
     }
   }
@@ -460,17 +546,22 @@ export default class Game {
 
       let distX = ball.x - testX;
       let distY = ball.y - testY;
-      let distance = Math.sqrt((distX * distX) + (distY * distY));
+      let distanceSq = (distX * distX) + (distY * distY);
 
-      if (distance <= ball.radius) {
-        brick.active = false;
-        this.score += 10;
-        
-        // 15% chance to drop a power-up
+      if (distanceSq <= ball.radius * ball.radius) {
+        // Handle destruction and visual effects
+        let isExplosion = false;
         if (secureRandom() < 0.15) {
+          isExplosion = true;
+          this._destroyBrick(brick, 'EXPLODE');
+
           const types = Object.values(POWERUP_TYPES);
           const randomType = types[Math.floor(secureRandom() * types.length)];
           this.powerUps.push(new PowerUp(brick.x + brick.width / 2 - 15, brick.y, randomType));
+        } else if (ball.isFireball) {
+          this._destroyBrick(brick, 'BURN');
+        } else {
+          this._destroyBrick(brick, 'FADE');
         }
 
         // Thru brick — no bounce, just destroy
@@ -483,45 +574,69 @@ export default class Game {
           continue;
         }
 
-        if (!ball.isFireball) {
-          let overlapLeft = (ball.x + ball.radius) - brick.x;
-          let overlapRight = (brick.x + brick.width) - (ball.x - ball.radius);
-          let overlapTop = (ball.y + ball.radius) - brick.y;
-          let overlapBottom = (brick.y + brick.height) - (ball.y - ball.radius);
+        let overlapLeft = (ball.x + ball.radius) - brick.x;
+        let overlapRight = (brick.x + brick.width) - (ball.x - ball.radius);
+        let overlapTop = (ball.y + ball.radius) - brick.y;
+        let overlapBottom = (brick.y + brick.height) - (ball.y - ball.radius);
 
-          let minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+        let minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
 
-          if (minOverlap === overlapLeft || minOverlap === overlapRight) {
-            ball.vx *= -1;
-          } else {
-            ball.vy *= -1;
-          }
-          
-          // Only hit one brick per frame to prevent weird physics
-          break;
+        if (minOverlap === overlapLeft || minOverlap === overlapRight) {
+          ball.vx *= -1;
+        } else {
+          ball.vy *= -1;
         }
-        // Fireball: destroy without bouncing but only one per frame in terms of bounce
+
+        // Only hit one brick per frame to prevent weird physics
+        break;
       }
     }
   }
 
   draw() {
-    // Black background
-    this.ctx.fillStyle = '#000000';
-    this.ctx.fillRect(0, 0, this.width, this.height);
+    const ctx = this.ctx;
 
-    // Draw bricks, powerups, bullets, paddle, balls
-    this.levelManager.draw(this.ctx);
-    this.powerUps.forEach(p => p.draw(this.ctx));
-    this.bullets.forEach(b => b.draw(this.ctx));
-    this.paddle.draw(this.ctx);
-    this.balls.forEach(b => b.draw(this.ctx));
+    // Black background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, this.width, this.height);
+
+    // Check if any ball is currently grabbed to inform paddle drawing
+    const isAnyBallGrabbed = this.balls.some(b => b.isGrabbed);
+
+    // Draw bricks
+    ctx.save();
+    this.levelManager.draw(ctx);
+    ctx.restore();
+
+    // Draw powerups (isolated — broken images can't corrupt context)
+    ctx.save();
+    this.powerUps.forEach(p => p.draw(ctx));
+    ctx.restore();
+
+    // Draw bullets
+    ctx.save();
+    this.bullets.forEach(b => b.draw(ctx));
+    ctx.restore();
+
+    // Draw paddle
+    ctx.save();
+    this.paddle.draw(ctx, isAnyBallGrabbed);
+    ctx.restore();
+
+    // Draw balls
+    ctx.save();
+    this.balls.forEach(b => b.draw(ctx));
+    ctx.restore();
 
     // Draw pillar walls ON TOP of everything
-    this._drawPillars(this.ctx);
+    ctx.save();
+    this._drawPillars(ctx);
+    ctx.restore();
 
     // HUD
+    ctx.save();
     this.drawUI();
+    ctx.restore();
   }
 
   _drawPillars(ctx) {
@@ -580,23 +695,15 @@ export default class Game {
     ctx.textBaseline = 'top';
     ctx.fillText(this.score.toString(), PLAYFIELD_LEFT + 10, 6);
 
-    // === Lives — small golden ball icons, top-right ===
-    const lifeRadius = 5;
-    const lifeSpacing = 14;
+    // === Lives — mini paddles, top-right ===
+    const paddleWidth = 30; // Mini paddle width
+    const paddleHeight = 8; // Mini paddle height
+    const lifeSpacing = paddleWidth + 10;
     const livesStartX = PLAYFIELD_RIGHT - 10 - (this.lives * lifeSpacing);
     for (let i = 0; i < this.lives; i++) {
-      const lx = livesStartX + i * lifeSpacing + lifeRadius;
-      const ly = 14;
-      
-      const lifeGrad = ctx.createRadialGradient(lx - 1, ly - 1, 1, lx, ly, lifeRadius);
-      lifeGrad.addColorStop(0, '#FFFDE0');
-      lifeGrad.addColorStop(0.5, '#E8D44D');
-      lifeGrad.addColorStop(1, '#8A7A20');
-      
-      ctx.beginPath();
-      ctx.arc(lx, ly, lifeRadius, 0, Math.PI * 2);
-      ctx.fillStyle = lifeGrad;
-      ctx.fill();
+      const lx = livesStartX + i * lifeSpacing + paddleWidth / 2;
+      const ly = 10;
+      drawPaddleShape(ctx, lx, ly, paddleWidth, paddleHeight, false);
     }
 
     // === Board transition screen ===

@@ -20,21 +20,26 @@ A faithful web-based recreation of the classic **Super DX-Ball** arcade game, bu
 
 | Icon | Name | Effect |
 |:---|:---|:---|
-| 🟢 | Enlarge / Shrink | Changes paddle size |
-| ❤️ | Extra Life | +1 life |
-| 💀 | Kill | -1 life |
-| 🔥 | Fireball | Ball destroys without bouncing |
-| 🎱 | 8-Ball | Spawns 7 extra balls |
-| 🧲 | Grab | Catch ball on paddle |
-| ⚡ | Fast / Slow | Changes ball speed |
-| 🔫 | Shooting Paddle | Fire laser bullets |
-| 💎 | Thru Brick | Ball passes through bricks |
-| 🌀 | Level Warp | Skip to next level |
-| ⚡ | Zap Bricks | Randomly destroy bricks |
-| 💥 | Mega Ball | Unstoppable ball |
-| ✂️ | Split Ball | Doubles all balls |
-| 💣 | Exploding | Chain brick explosions |
-| ⬇️ | Falling Bricks | Bricks descend toward paddle |
+| <img src="assets/powerups/enlarge.png" width="31" height="31"> | Enlarge | Increases paddle size |
+| <img src="assets/powerups/shrink.png" width="31" height="31"> | Shrink | Decreases paddle size |
+| <img src="assets/powerups/super_shrink.png" width="31" height="31"> | Super Shrink | Drastically decreases paddle size |
+| <img src="assets/powerups/life.png" width="31" height="31"> | Extra Life | +1 life |
+| <img src="assets/powerups/kill.png" width="31" height="31"> | Kill | -1 life |
+| <img src="assets/powerups/fireball.png" width="31" height="31"> | Fireball | Bounces and destroys surrounding bricks |
+| <img src="assets/powerups/eight_ball.png" width="31" height="31"> | 8-Ball | Spawns 7 extra balls |
+| <img src="assets/powerups/grab.png" width="31" height="31"> | Grab | Catch ball on paddle |
+| <img src="assets/powerups/fast.png" width="31" height="31"> | Fast | Increases ball speed |
+| <img src="assets/powerups/slow.png" width="31" height="31"> | Slow | Decreases ball speed |
+| <img src="assets/powerups/shooting_paddle.png" width="31" height="31"> | Shooting Paddle | Fire laser bullets |
+| <img src="assets/powerups/thru_brick.png" width="31" height="31"> | Thru Brick | Ball passes through bricks |
+| <img src="assets/powerups/level_warp.png" width="31" height="31"> | Level Warp | Skip to next level |
+| <img src="assets/powerups/zap_bricks.png" width="31" height="31"> | Zap Bricks | Randomly destroy bricks |
+| <img src="assets/powerups/mega_ball.png" width="31" height="31"> | Mega Ball | Unstoppable ball |
+| <img src="assets/powerups/shrink_ball.png" width="31" height="31"> | Shrink Ball | Decreases ball size |
+| <img src="assets/powerups/split_ball.png" width="31" height="31"> | Split Ball | Doubles all balls |
+| <img src="assets/powerups/set_off_exploding.png" width="31" height="31"> | Exploding | Explodes a brick |
+| <img src="assets/powerups/expand_exploding.png" width="31" height="31"> | Expand Exploding | Chain brick explosions |
+| <img src="assets/powerups/falling_bricks.png" width="31" height="31"> | Falling Bricks | Bricks descend toward paddle |
 
 ## Tech Stack
 
