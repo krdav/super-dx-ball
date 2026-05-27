@@ -59,6 +59,20 @@ export default class Paddle {
   }
 }
 
+/**
+ * Adds the light blue metallic color stops to a canvas gradient.
+ * Used for the paddle's side caps.
+ */
+function applyCapGradientStops(grad) {
+  grad.addColorStop(0, '#AADDFF');   // Bright top edge
+  grad.addColorStop(0.15, '#66BBFF'); // Bright light blue
+  grad.addColorStop(0.4, '#3399DD');  // Mid light blue
+  grad.addColorStop(0.5, '#88CCFF');  // Bright center highlight strip
+  grad.addColorStop(0.6, '#3399DD');  // Mid light blue again
+  grad.addColorStop(0.85, '#1166AA'); // Dark light blue
+  grad.addColorStop(1, '#003366');    // Very dark bottom edge
+}
+
 export function drawPaddleShape(ctx, x, y, width, height, isShooting, isGrab = false, animTimer = 0, isAnyBallGrabbed = false) {
   const rx = x - width / 2;
   const ry = y;
@@ -88,13 +102,7 @@ export function drawPaddleShape(ctx, x, y, width, height, isShooting, isGrab = f
 
   // Left cap gradient
   const leftCapGrad = ctx.createLinearGradient(rx, ry, rx, ry + h);
-  leftCapGrad.addColorStop(0, '#AADDFF');   // Bright top edge
-  leftCapGrad.addColorStop(0.15, '#66BBFF'); // Bright light blue
-  leftCapGrad.addColorStop(0.4, '#3399DD');  // Mid light blue
-  leftCapGrad.addColorStop(0.5, '#88CCFF');  // Bright center highlight strip
-  leftCapGrad.addColorStop(0.6, '#3399DD');  // Mid light blue again
-  leftCapGrad.addColorStop(0.85, '#1166AA'); // Dark light blue
-  leftCapGrad.addColorStop(1, '#003366');    // Very dark bottom edge
+  applyCapGradientStops(leftCapGrad);
 
   ctx.fillStyle = leftCapGrad;
   ctx.beginPath();
@@ -103,13 +111,7 @@ export function drawPaddleShape(ctx, x, y, width, height, isShooting, isGrab = f
 
   // Right cap gradient
   const rightCapGrad = ctx.createLinearGradient(rx + width - capWidth, ry, rx + width - capWidth, ry + h);
-  rightCapGrad.addColorStop(0, '#AADDFF');   // Bright top edge
-  rightCapGrad.addColorStop(0.15, '#66BBFF'); // Bright light blue
-  rightCapGrad.addColorStop(0.4, '#3399DD');  // Mid light blue
-  rightCapGrad.addColorStop(0.5, '#88CCFF');  // Bright center highlight strip
-  rightCapGrad.addColorStop(0.6, '#3399DD');  // Mid light blue again
-  rightCapGrad.addColorStop(0.85, '#1166AA'); // Dark light blue
-  rightCapGrad.addColorStop(1, '#003366');    // Very dark bottom edge
+  applyCapGradientStops(rightCapGrad);
 
   ctx.fillStyle = rightCapGrad;
   ctx.beginPath();
